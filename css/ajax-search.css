@@ -1,0 +1,112 @@
+.ajax-search-container {
+    max-width: 600px;
+    margin: 20px auto;
+    position: relative;
+}
+
+#ajax-search-input {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    outline: none;
+    transition: border-color 0.3s ease;
+    box-shadow: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+#ajax-search-input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+#ajax-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#ajax-search-results[aria-hidden="true"] {
+    display: none;
+}
+
+#ajax-search-results ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#ajax-search-results li {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+#ajax-search-results li:last-child {
+    border-bottom: none;
+}
+
+#ajax-search-results li:hover {
+    background-color: #f5f5f5;
+}
+
+#ajax-search-results a {
+    color: #333;
+    text-decoration: none;
+    display: block;
+}
+
+#ajax-search-results .ajax-search-item.post::before,
+#ajax-search-results .ajax-search-item.taxonomy::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+#ajax-search-results .ajax-search-item.post::before {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%234a90e2"><path d="M17 3H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 2h6v2h-6V5zm0 4h6v2h-6V9zm0 4h6v2h-6v-2zM3 5h4v2H3V5zm0 4h4v2H3V9zm0 4h4v2H3v-2z"/></svg>') no-repeat center center;
+    background-size: contain;
+}
+
+#ajax-search-results .ajax-search-item.taxonomy::before {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23f39c12"><path d="M7 3c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2v2H3c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2H7zm6 0c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2v2h-2c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-2V7h2c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2h-2z"/></svg>') no-repeat center center;
+    background-size: contain;
+}
+
+#ajax-search-results p {
+    padding: 10px 15px;
+    margin: 0;
+    color: #666;
+    font-style: italic;
+}
+
+#ajax-search-results li.active {
+    background-color: #f0f0f0;
+}
+
+.screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    word-wrap: normal !important;
+}
