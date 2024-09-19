@@ -2,7 +2,7 @@
 /*
 Plugin Name: Tsearch
 Description: AJAX search for posts, taxonomies, custom post types and custom taxonomies
-Version: 1.0
+Version: 1.1
 Author: Toni Quinonero
 */
 
