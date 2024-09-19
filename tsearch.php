@@ -119,8 +119,9 @@ function ajax_search_shortcode() {
     ob_start();
     ?>
     <div class="ajax-search-container">
-        <input type="text" id="ajax-search-input" placeholder="Search...">
-        <div id="ajax-search-results"></div>
+        <label for="ajax-search-input" class="screen-reader-text">Search</label>
+        <input type="text" id="ajax-search-input" placeholder="Search..." aria-autocomplete="list" aria-controls="ajax-search-results">
+        <div id="ajax-search-results" role="listbox" aria-label="Search results"></div>
     </div>
     <?php
     return ob_get_clean();
