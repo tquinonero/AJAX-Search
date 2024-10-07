@@ -1,18 +1,31 @@
 <?php
 /*
 Plugin Name: Tsearch
-Description: AJAX search for posts, taxonomies, custom post types and custom taxonomies
-Version: 1.1
-Author: Toni Quinonero
+Description: AJAX search for posts, taxonomies, custom post types, and custom taxonomies.
+Version: 1.0
+Author: Innov8ion.tech
+Author URI: https://innov8ion.tech
+Plugin URI: https://innov8ion.tech/plugins
+License: GPL2
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: AJAX Search
+Domain Path: /languages
+Requires at least: 5.0
+Tested up to: 6.6
+Requires PHP: 7.0 or higher
+Tags: ajax, search, posts, taxonomies, custom post types
 */
 
 // Enqueue scripts and styles
 function ajax_search_enqueue_scripts() {
-    wp_enqueue_script('ajax-search-script', plugin_dir_url(__FILE__) . 'js/ajax-search.js', array('jquery'), '1.0', true);
-    wp_localize_script('ajax-search-script', 'ajax_search_params', array(
-        'ajax_url' => admin_url('admin-ajax.php')
-    ));
-    wp_enqueue_style('ajax-search-style', plugin_dir_url(__FILE__) . 'css/ajax-search.css');
+    // Only enqueue on the front end
+    if (!is_admin()) {
+        wp_enqueue_script('ajax-search-script', plugin_dir_url(__FILE__) . 'js/ajax-search.js', array('jquery'), '1.0', true);
+        wp_localize_script('ajax-search-script', 'ajax_search_params', array(
+            'ajax_url' => admin_url('admin-ajax.php')
+        ));
+        wp_enqueue_style('ajax-search-style', plugin_dir_url(__FILE__) . 'css/ajax-search.css', array(), '1.0', 'all'); // Added version number
+    }
 }
 add_action('wp_enqueue_scripts', 'ajax_search_enqueue_scripts');
 
@@ -28,9 +41,23 @@ function ajax_search_settings_page_content() {
         return;
     }
     
-    if (isset($_POST['ajax_search_settings_nonce']) && wp_verify_nonce($_POST['ajax_search_settings_nonce'], 'ajax_search_settings')) {
-        update_option('ajax_search_post_types', isset($_POST['post_types']) ? $_POST['post_types'] : array());
-        update_option('ajax_search_taxonomies', isset($_POST['taxonomies']) ? $_POST['taxonomies'] : array());
+    // Check if the nonce is set and unslash it
+    if (isset($_POST['ajax_search_settings_nonce'])) {
+        $nonce = wp_unslash($_POST['ajax_search_settings_nonce']); // Unsplash the nonce
+        
+        // Verify the nonce
+        if (wp_verify_nonce($nonce, 'ajax_search_settings')) {
+            // Sanitize and update options
+            $post_types = isset($_POST['post_types']) ? wp_unslash($_POST['post_types']) : array();
+            $taxonomies = isset($_POST['taxonomies']) ? wp_unslash($_POST['taxonomies']) : array();
+            
+            // Sanitize the post types and taxonomies before saving
+            $post_types = array_map('sanitize_text_field', (array) $post_types);
+            $taxonomies = array_map('sanitize_text_field', (array) $taxonomies);
+            
+            update_option('ajax_search_post_types', $post_types);
+            update_option('ajax_search_taxonomies', $taxonomies);
+        }
     }
     
     $post_types = get_post_types(array('public' => true), 'objects');
@@ -69,7 +96,21 @@ function ajax_search_settings_page_content() {
 
 // AJAX search function
 function ajax_search() {
-    $search_query = sanitize_text_field($_POST['search_query']);
+    // Check if the nonce is set and valid
+    if (!isset($_POST['ajax_search_nonce']) || !wp_verify_nonce(wp_unslash($_POST['ajax_search_nonce']), 'ajax_search')) {
+        wp_send_json_error('Invalid nonce.');
+        return;
+    }
+
+    // Check if the search_query is set and unslash it
+    if (isset($_POST['search_query'])) {
+        $search_query = wp_unslash($_POST['search_query']); // Unslash the search query
+        $search_query = sanitize_text_field($search_query); // Sanitize the search query
+    } else {
+        wp_send_json_error('Search query is missing.');
+        return;
+    }
+
     $selected_post_types = get_option('ajax_search_post_types', array());
     $selected_taxonomies = get_option('ajax_search_taxonomies', array());
     
