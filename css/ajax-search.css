@@ -110,3 +110,22 @@
     width: 1px;
     word-wrap: normal !important;
 }
+
+.search-input-container {
+    position: relative;
+}
+
+#microphone-button {
+    position: absolute;
+    right: 10px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#microphone-button img {
+    width: 20px; /* Adjust size as needed */
+    height: 20px; /* Adjust size as needed */
+}
