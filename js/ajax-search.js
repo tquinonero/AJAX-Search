@@ -91,4 +91,27 @@ jQuery(document).ready(function($) {
         }
         currentFocus = -1;
     }
+
+    // Initialize the Speech Recognition API
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var recognition = new SpeechRecognition();
+
+    recognition.onstart = function() {
+        console.log('Voice recognition activated. Try speaking into the microphone.');
+    };
+
+    recognition.onresult = function(event) {
+        var transcript = event.results[0][0].transcript;
+        searchInput.val(transcript); // Set the input value to the recognized speech
+        performSearch(transcript); // Perform search with the recognized speech
+    };
+
+    recognition.onerror = function(event) {
+        console.error('Speech recognition error detected: ' + event.error);
+    };
+
+    // Voice search button click event
+    $('#microphone-button').on('click', function() {
+        recognition.start(); // Start voice recognition
+    });
 });
