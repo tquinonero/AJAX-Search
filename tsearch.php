@@ -2,7 +2,7 @@
 /*
 Plugin Name: Tsearch
 Description: AJAX search for posts, taxonomies, custom post types, and custom taxonomies.
-Version: 1.1
+Version: 1.2
 Author: Innov8ion.tech
 Author URI: https://innov8ion.tech
 Plugin URI: https://innov8ion.tech/plugins
@@ -14,6 +14,14 @@ Requires at least: 5.0
 Tested up to: 6.6
 Requires PHP: 7.0 or higher
 Tags: ajax, search, posts, taxonomies, custom post types
+*/
+
+<?php
+/*
+Plugin Name: Tsearch
+Description: AJAX search for posts, taxonomies, custom post types and custom taxonomies
+Version: 1.1
+Author: Toni Quinonero
 */
 
 // Enqueue scripts and styles
@@ -40,11 +48,12 @@ function ajax_search_add_admin_menu() {
 }
 add_action('admin_menu', 'ajax_search_add_admin_menu');
 
-// Register plugin settings
 function ajax_search_register_settings() {
     register_setting('ajax_search_settings', 'ajax_search_post_types');
     register_setting('ajax_search_settings', 'ajax_search_taxonomies');
     register_setting('ajax_search_settings', 'ajax_search_custom_fields');
+    register_setting('ajax_search_settings', 'ajax_search_page_id'); // New setting
+    register_setting('ajax_search_settings', 'ajax_search_position'); // New setting for position
 }
 add_action('admin_init', 'ajax_search_register_settings');
 
@@ -58,6 +67,8 @@ function ajax_search_settings_page_content() {
         update_option('ajax_search_post_types', isset($_POST['post_types']) ? $_POST['post_types'] : array());
         update_option('ajax_search_taxonomies', isset($_POST['taxonomies']) ? $_POST['taxonomies'] : array());
         update_option('ajax_search_custom_fields', isset($_POST['custom_fields']) ? $_POST['custom_fields'] : array());
+        update_option('ajax_search_page_id', isset($_POST['search_page_id']) ? intval($_POST['search_page_id']) : 0);
+        update_option('ajax_search_position', isset($_POST['search_position']) ? sanitize_text_field($_POST['search_position']) : 'before_content');
     }
     
     $post_types = get_post_types(array('public' => true), 'objects');
@@ -65,6 +76,11 @@ function ajax_search_settings_page_content() {
     $selected_post_types = get_option('ajax_search_post_types', array());
     $selected_taxonomies = get_option('ajax_search_taxonomies', array());
     $selected_custom_fields = get_option('ajax_search_custom_fields', array());
+    $selected_page_id = get_option('ajax_search_page_id', 0);
+    $selected_position = get_option('ajax_search_position', 'before_content');
+
+        // Get all pages for the dropdown
+        $pages = get_pages();
 
     // Custom fields detection
     $custom_fields = array();
@@ -113,6 +129,32 @@ function ajax_search_settings_page_content() {
         <form action="" method="post">
             <?php wp_nonce_field('ajax_search_settings', 'ajax_search_settings_nonce'); ?>
             
+            <div class="card" style="margin-top: 20px;">
+                <h2>Search Bar Display Settings</h2>
+                <p>Select a page to automatically display the search bar (optional):</p>
+                <select name="search_page_id" style="max-width: 300px;">
+                    <option value="0"><?php esc_html_e('-- Select a page --'); ?></option>
+                    <?php foreach ($pages as $page): ?>
+                        <option value="<?php echo esc_attr($page->ID); ?>" <?php selected($selected_page_id, $page->ID); ?>>
+                            <?php echo esc_html($page->post_title); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <p style="margin-top: 15px;">Select where to display the search bar:</p>
+                <select name="search_position" style="max-width: 300px;">
+                    <option value="before_content" <?php selected($selected_position, 'before_content'); ?>>
+                        <?php esc_html_e('Before Content'); ?>
+                    </option>
+                    <option value="after_content" <?php selected($selected_position, 'after_content'); ?>>
+                        <?php esc_html_e('After Content'); ?>
+                    </option>
+                </select>
+                <p class="description">
+                    Note: You can still use the shortcode [ajax_search] to display the search bar anywhere else.
+                </p>
+            </div>
+
             <div class="card">
                 <h2>Select Post Types to Search</h2>
                 <?php foreach ($post_types as $post_type): ?>
@@ -169,6 +211,46 @@ function ajax_search_settings_page_content() {
     </div>
     <?php
 }
+
+// New function to automatically display the search bar
+function ajax_search_auto_display($content) {
+    // Check if we're on a page and if it's the selected page
+    if (!is_page()) {
+        return $content;
+    }
+
+    $selected_page_id = get_option('ajax_search_page_id', 0);
+    if (!$selected_page_id || $selected_page_id != get_the_ID()) {
+        return $content;
+    }
+
+    $search_bar = ajax_search_shortcode();
+    $position = get_option('ajax_search_position', 'before_content');
+
+    // Handle different theme types (Classic and FSE)
+    if (current_theme_supports('block-templates')) {
+        // For FSE themes, we'll use block_content filter
+        add_filter('render_block', function($block_content, $block) use ($search_bar, $position) {
+            if ($block['blockName'] === 'core/post-content') {
+                if ($position === 'before_content') {
+                    return $search_bar . $block_content;
+                } else {
+                    return $block_content . $search_bar;
+                }
+            }
+            return $block_content;
+        }, 10, 2);
+        return $content;
+    } else {
+        // For classic themes, we'll modify the content directly
+        if ($position === 'before_content') {
+            return $search_bar . $content;
+        } else {
+            return $content . $search_bar;
+        }
+    }
+}
+add_filter('the_content', 'ajax_search_auto_display');
 
 // AJAX search function
 function ajax_search() {
