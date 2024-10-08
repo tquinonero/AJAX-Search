@@ -2,7 +2,7 @@
 /*
 Plugin Name: Tsearch
 Description: AJAX search for posts, taxonomies, custom post types, and custom taxonomies.
-Version: 1.0
+Version: 1.1
 Author: Innov8ion.tech
 Author URI: https://innov8ion.tech
 Plugin URI: https://innov8ion.tech/plugins
@@ -18,75 +18,151 @@ Tags: ajax, search, posts, taxonomies, custom post types
 
 // Enqueue scripts and styles
 function ajax_search_enqueue_scripts() {
-    // Only enqueue on the front end
-    if (!is_admin()) {
-        wp_enqueue_script('ajax-search-script', plugin_dir_url(__FILE__) . 'js/ajax-search.js', array('jquery'), '1.0', true);
-        wp_localize_script('ajax-search-script', 'ajax_search_params', array(
-            'ajax_url' => admin_url('admin-ajax.php')
-        ));
-        wp_enqueue_style('ajax-search-style', plugin_dir_url(__FILE__) . 'css/ajax-search.css', array(), '1.0', 'all'); // Added version number
-    }
+    wp_enqueue_script('ajax-search-script', plugin_dir_url(__FILE__) . 'js/ajax-search.js', array('jquery'), '1.0', true);
+    wp_localize_script('ajax-search-script', 'ajax_search_params', array(
+        'ajax_url' => admin_url('admin-ajax.php')
+    ));
+    wp_enqueue_style('ajax-search-style', plugin_dir_url(__FILE__) . 'css/ajax-search.css');
 }
 add_action('wp_enqueue_scripts', 'ajax_search_enqueue_scripts');
 
 // Add settings page
-function ajax_search_settings_page() {
-    add_options_page('AJAX Search Settings', 'AJAX Search', 'manage_options', 'ajax-search-settings', 'ajax_search_settings_page_content');
+function ajax_search_add_admin_menu() {
+    add_menu_page(
+        'AJAX Search Settings',
+        'AJAX Search',
+        'manage_options',
+        'ajax-search-settings',
+        'ajax_search_settings_page_content',
+        'dashicons-search',
+        30
+    );
 }
-add_action('admin_menu', 'ajax_search_settings_page');
+add_action('admin_menu', 'ajax_search_add_admin_menu');
+
+// Register plugin settings
+function ajax_search_register_settings() {
+    register_setting('ajax_search_settings', 'ajax_search_post_types');
+    register_setting('ajax_search_settings', 'ajax_search_taxonomies');
+    register_setting('ajax_search_settings', 'ajax_search_custom_fields');
+}
+add_action('admin_init', 'ajax_search_register_settings');
 
 // Settings page content
 function ajax_search_settings_page_content() {
     if (!current_user_can('manage_options')) {
-        return;
+        wp_die(__('You do not have sufficient permissions to access this page.'));
     }
     
-    // Check if the nonce is set and unslash it
-    if (isset($_POST['ajax_search_settings_nonce'])) {
-        $nonce = wp_unslash($_POST['ajax_search_settings_nonce']); // Unsplash the nonce
-        
-        // Verify the nonce
-        if (wp_verify_nonce($nonce, 'ajax_search_settings')) {
-            // Sanitize and update options
-            $post_types = isset($_POST['post_types']) ? wp_unslash($_POST['post_types']) : array();
-            $taxonomies = isset($_POST['taxonomies']) ? wp_unslash($_POST['taxonomies']) : array();
-            
-            // Sanitize the post types and taxonomies before saving
-            $post_types = array_map('sanitize_text_field', (array) $post_types);
-            $taxonomies = array_map('sanitize_text_field', (array) $taxonomies);
-            
-            update_option('ajax_search_post_types', $post_types);
-            update_option('ajax_search_taxonomies', $taxonomies);
-        }
+    if (isset($_POST['ajax_search_settings_nonce']) && wp_verify_nonce($_POST['ajax_search_settings_nonce'], 'ajax_search_settings')) {
+        update_option('ajax_search_post_types', isset($_POST['post_types']) ? $_POST['post_types'] : array());
+        update_option('ajax_search_taxonomies', isset($_POST['taxonomies']) ? $_POST['taxonomies'] : array());
+        update_option('ajax_search_custom_fields', isset($_POST['custom_fields']) ? $_POST['custom_fields'] : array());
     }
     
     $post_types = get_post_types(array('public' => true), 'objects');
     $taxonomies = get_taxonomies(array('public' => true), 'objects');
     $selected_post_types = get_option('ajax_search_post_types', array());
     $selected_taxonomies = get_option('ajax_search_taxonomies', array());
+    $selected_custom_fields = get_option('ajax_search_custom_fields', array());
+
+    // Custom fields detection
+    $custom_fields = array();
+    $post_types_to_check = !empty($selected_post_types) ? $selected_post_types : array_keys(get_post_types(array('public' => true)));
+    
+    foreach ($post_types_to_check as $post_type) {
+        $args = array(
+            'post_type' => $post_type,
+            'posts_per_page' => 100,
+            'post_status' => 'any',
+            'fields' => 'ids',
+        );
+        
+        $query = new WP_Query($args);
+        
+        if ($query->have_posts()) {
+            foreach ($query->posts as $post_id) {
+                $post_custom_keys = get_post_custom_keys($post_id);
+                if (!empty($post_custom_keys)) {
+                    $custom_fields = array_merge($custom_fields, $post_custom_keys);
+                }
+            }
+        }
+        wp_reset_postdata();
+    }
+
+    // Add ACF fields if available
+    if (function_exists('acf_get_field_groups')) {
+        $field_groups = acf_get_field_groups();
+        foreach ($field_groups as $field_group) {
+            $fields = acf_get_fields($field_group);
+            if (!empty($fields)) {
+                foreach ($fields as $field) {
+                    $custom_fields[] = $field['name'];
+                }
+            }
+        }
+    }
+
+    $custom_fields = array_unique($custom_fields);
+    sort($custom_fields);
     
     ?>
     <div class="wrap">
         <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
         <form action="" method="post">
             <?php wp_nonce_field('ajax_search_settings', 'ajax_search_settings_nonce'); ?>
-            <h2>Select Post Types to Search</h2>
-            <?php foreach ($post_types as $post_type): ?>
-                <label>
-                    <input type="checkbox" name="post_types[]" value="<?php echo esc_attr($post_type->name); ?>"
-                        <?php checked(in_array($post_type->name, $selected_post_types)); ?>>
-                    <?php echo esc_html($post_type->label); ?>
-                </label><br>
-            <?php endforeach; ?>
             
-            <h2>Select Taxonomies to Search</h2>
-            <?php foreach ($taxonomies as $taxonomy): ?>
-                <label>
-                    <input type="checkbox" name="taxonomies[]" value="<?php echo esc_attr($taxonomy->name); ?>"
-                        <?php checked(in_array($taxonomy->name, $selected_taxonomies)); ?>>
-                    <?php echo esc_html($taxonomy->label); ?>
-                </label><br>
-            <?php endforeach; ?>
+            <div class="card">
+                <h2>Select Post Types to Search</h2>
+                <?php foreach ($post_types as $post_type): ?>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="checkbox" name="post_types[]" value="<?php echo esc_attr($post_type->name); ?>"
+                            <?php checked(in_array($post_type->name, $selected_post_types)); ?>>
+                        <?php echo esc_html($post_type->label); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h2>Select Taxonomies to Search</h2>
+                <?php foreach ($taxonomies as $taxonomy): ?>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="checkbox" name="taxonomies[]" value="<?php echo esc_attr($taxonomy->name); ?>"
+                            <?php checked(in_array($taxonomy->name, $selected_taxonomies)); ?>>
+                        <?php echo esc_html($taxonomy->label); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h2>Select Custom Fields to Search</h2>
+                <?php if (empty($custom_fields)): ?>
+                    <p>No custom fields found. Try selecting and saving post types first.</p>
+                <?php else: ?>
+                    <div style="max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #ddd;">
+                        <?php foreach ($custom_fields as $custom_field): ?>
+                            <?php
+                            // Skip WordPress internal fields
+                            if (in_array($custom_field, array('_edit_lock', '_edit_last'))) {
+                                continue;
+                            }
+                            ?>
+                            <label style="display: block; margin: 5px 0;">
+                                <input type="checkbox" name="custom_fields[]" value="<?php echo esc_attr($custom_field); ?>"
+                                    <?php checked(in_array($custom_field, $selected_custom_fields)); ?>>
+                                <?php 
+                                if (strpos($custom_field, '_') === 0) {
+                                    echo esc_html($custom_field) . ' <span style="color: #666;">(Hidden field)</span>';
+                                } else {
+                                    echo esc_html($custom_field);
+                                }
+                                ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
             
             <?php submit_button('Save Settings'); ?>
         </form>
@@ -96,29 +172,28 @@ function ajax_search_settings_page_content() {
 
 // AJAX search function
 function ajax_search() {
-    // Check if the nonce is set and valid
-    if (!isset($_POST['ajax_search_nonce']) || !wp_verify_nonce(wp_unslash($_POST['ajax_search_nonce']), 'ajax_search')) {
-        wp_send_json_error('Invalid nonce.');
-        return;
-    }
-
-    // Check if the search_query is set and unslash it
-    if (isset($_POST['search_query'])) {
-        $search_query = wp_unslash($_POST['search_query']); // Unslash the search query
-        $search_query = sanitize_text_field($search_query); // Sanitize the search query
-    } else {
-        wp_send_json_error('Search query is missing.');
-        return;
-    }
-
+    $search_query = sanitize_text_field($_POST['search_query']);
     $selected_post_types = get_option('ajax_search_post_types', array());
     $selected_taxonomies = get_option('ajax_search_taxonomies', array());
+    $selected_custom_fields = get_option('ajax_search_custom_fields', array());
     
     $args = array(
         's' => $search_query,
         'post_type' => $selected_post_types,
-        'posts_per_page' => 10
+        'posts_per_page' => 10,
+        'meta_query' => array('relation' => 'OR')
     );
+
+    // Add custom fields to the meta query
+    if (!empty($selected_custom_fields)) {
+        foreach ($selected_custom_fields as $custom_field) {
+            $args['meta_query'][] = array(
+                'key' => $custom_field,
+                'value' => $search_query,
+                'compare' => 'LIKE'
+            );
+        }
+    }
     
     $query = new WP_Query($args);
     $results = array();
@@ -132,6 +207,7 @@ function ajax_search() {
                 'type' => 'post'
             );
         }
+        wp_reset_postdata();
     }
     
     foreach ($selected_taxonomies as $taxonomy) {
@@ -161,10 +237,16 @@ function ajax_search_shortcode() {
     ?>
     <div class="ajax-search-container">
         <label for="ajax-search-input" class="screen-reader-text">Search</label>
-        <input type="text" id="ajax-search-input" placeholder="Search..." aria-autocomplete="list" aria-controls="ajax-search-results">
+        <div class="search-input-container">
+            <input type="text" id="ajax-search-input" placeholder="Search..." aria-autocomplete="list" aria-controls="ajax-search-results">
+            <button id="microphone-button" aria-label="Voice Search">
+                <img src="<?php echo esc_url(plugins_url('images/microphone-icon.png', __FILE__)); ?>" alt="Microphone Icon" />
+            </button>
+        </div>
         <div id="ajax-search-results" role="listbox" aria-label="Search results"></div>
     </div>
     <?php
     return ob_get_clean();
 }
 add_shortcode('ajax_search', 'ajax_search_shortcode');
+?>
