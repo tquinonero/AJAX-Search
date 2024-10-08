@@ -40,7 +40,7 @@ You can customize the search settings by navigating to the 'Settings' menu in yo
 
 = Is the plugin compatible with other themes and plugins? =
 
-Tsearch is designed to work with most WordPress themes and plugins. However, if you encounter any issues, please reach out to us for support.
+Tsearch is designed to work with most WordPress themes and plugins. However, if you encounter any issues, please reach out to us for support at hello@innov8ion.tech
 
 = Can I use Tsearch with custom post types? =
 
@@ -51,6 +51,11 @@ Yes! Tsearch supports custom post types and taxonomies, allowing you to search t
 Yes! Tsearch supports custom fields, allowing you to search through all your content seamlessly.
 
 == Changelog ==
+
+= 1.2 =
+* Added support for FSE themes. 
+* Added a dropdown in the settings page to select the page where the results will be shown.
+* Added a dropdown in the settings page to select the position of the search box (before content or after content).
 
 = 1.1 =
 * Added support for custom fields.
