@@ -5,7 +5,7 @@ Description: AJAX search for posts, taxonomies, custom post types, and custom ta
 Version: 1.2
 Author: Innov8ion.tech
 Author URI: https://innov8ion.tech
-Plugin URI: https://innov8ion.tech/plugins
+Plugin URI: https://innov8ion.tech/tsearch-plugin-for-wordpress
 License: GPL2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: AJAX Search
