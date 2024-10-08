@@ -15,15 +15,6 @@ Tested up to: 6.6
 Requires PHP: 7.0 or higher
 Tags: ajax, search, posts, taxonomies, custom post types
 */
-
-<?php
-/*
-Plugin Name: Tsearch
-Description: AJAX search for posts, taxonomies, custom post types and custom taxonomies
-Version: 1.1
-Author: Toni Quinonero
-*/
-
 // Enqueue scripts and styles
 function ajax_search_enqueue_scripts() {
     wp_enqueue_script('ajax-search-script', plugin_dir_url(__FILE__) . 'js/ajax-search.js', array('jquery'), '1.0', true);
