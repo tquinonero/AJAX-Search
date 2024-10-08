@@ -46,15 +46,20 @@ Tsearch is designed to work with most WordPress themes and plugins. However, if 
 
 Yes! Tsearch supports custom post types and taxonomies, allowing you to search through all your content seamlessly.
 
+= Can I use Tsearch with custom fields? =
+
+Yes! Tsearch supports custom fields, allowing you to search through all your content seamlessly.
+
 == Changelog ==
 
-= 1.0 =
-* Initial release of Tsearch.
+= 1.1 =
+* Added support for custom fields.
+* Added support for custom post types.
+* Added support for custom taxonomies.
+* Added support for voice search.
 
-== Upgrade Notice ==
-
 = 1.0 =
-Initial release. Please update to enjoy the latest features and improvements.
+* Initial release.
 
 == Screenshots ==
 
