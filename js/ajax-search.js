@@ -50,6 +50,11 @@ jQuery(document).ready(function($) {
     }
 
     function performSearch(query) {
+        // Show loading state
+        searchResults
+            .attr('aria-hidden', 'false')
+            .html('<p class="ajax-search-loading">Searching…</p>');
+
         $.ajax({
             url: ajax_search_params.ajax_url,
             type: 'POST',
@@ -58,10 +63,13 @@ jQuery(document).ready(function($) {
                 search_query: query
             },
             success: function(response) {
-                displayResults(response);
+                displayResults(response || []);
             },
             error: function(xhr, status, error) {
                 console.error('AJAX Search Error:', error);
+                searchResults
+                    .attr('aria-hidden', 'false')
+                    .html('<p class="ajax-search-error">There was an error performing the search.</p>');
             }
         });
     }
