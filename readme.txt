@@ -1,13 +1,12 @@
 === Custom Search by ToniQ ===
-Contributors: Toni Quiñonero
+Contributors: tquinonero
 Tags: ajax, search, posts, taxonomies, custom post types, custom fields
 Requires at least: 5.0
 Tested up to: 6.6
 Requires PHP: 7.0
+Stable tag: 2.0.0
 License: GPL2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Plugin URI: https://innov8ion.tech/plugins
-Author URI: https://innov8ion.tech
 
 == Description ==
 
@@ -37,14 +36,16 @@ It is based on the original "Tsearch" plugin and has been refactored and restyle
 
 There are two main ways to display the search bar:
 
-1. **Automatically on a page**  
-	Go to the **Custom Search** settings page and choose a page and display position. The search bar will be injected before or after the content on that page.
+1. **Automatically on a page**
 
-2. **Shortcode**  
-	Use one of these shortcodes in any post, page, or widget:
+   Go to the **Custom Search** settings page and choose a page and display position. The search bar will be injected before or after the content on that page.
 
-	* `[custom_search_by_toniq]` – primary shortcode.
-	* `[ajax_search]` – legacy alias kept for backward compatibility.
+2. **Shortcode**
+
+   Use one of these shortcodes in any post, page, or widget:
+
+   * `[custom_search_by_toniq]` – primary shortcode.
+   * `[ajax_search]` – legacy alias kept for backward compatibility.
 
 == Frequently Asked Questions ==
 
@@ -96,10 +97,6 @@ Yes. The `[ajax_search]` shortcode is still registered as a backward-compatible 
 1. The Custom Search by ToniQ search box in action.
 2. Search results displayed dynamically as you type.
 3. Settings page for configuring searchable content and display options.
-
-== Acknowledgements ==
-
-Thanks to the WordPress community for their support and contributions.
 
 == License ==
 
